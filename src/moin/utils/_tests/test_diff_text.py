@@ -5,6 +5,8 @@
 MoinMoin - moin.utils.diff_text tests.
 """
 
+import pytest
+
 from moin.utils import diff_text
 
 
@@ -64,6 +66,35 @@ BBB 003
 - AAA 014"""
 
         assert result == expected, 'Expected "%(expected)s" but got "%(result)s"' % locals()
+
+
+@pytest.mark.parametrize("ignorews", [False, True])
+@pytest.mark.parametrize("lines", [[], ["same\n"], ["Привіт\n", "  text with whitespace\n"]])
+def test_identical_lists_return_empty_without_modifying_inputs(lines, ignorews):
+    oldlines = lines.copy()
+    newlines = lines.copy()
+
+    assert oldlines is not newlines
+    assert diff_text.diff(oldlines, newlines, ignorews=ignorews) == []
+    assert oldlines == newlines == lines
+
+
+@pytest.mark.parametrize("ignorews", [False, True])
+@pytest.mark.parametrize(
+    "oldlines, newlines, expected",
+    [
+        ([], ["new\n"], ["+ new\n"]),
+        (["old\n"], [], ["- old\n"]),
+        (["old\n"], ["new\n"], ["- old\n", "+ new\n"]),
+        (["same\n", "old\n"], ["same\n", "new\n"], ["  same\n", "- old\n", "+ new\n"]),
+    ],
+)
+def test_changed_lists_keep_expected_diff(oldlines, newlines, expected, ignorews):
+    assert diff_text.diff(oldlines, newlines, ignorews=ignorews) == expected
+
+
+def test_equal_tuples_keep_existing_sequence_support():
+    assert diff_text.diff(("same\n", "text\n"), ("same\n", "text\n")) == []
 
 
 coverage_modules = ["moin.utils.diff_text"]

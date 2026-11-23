@@ -18,6 +18,11 @@ def diff(oldlines, newlines, **kw):
     :rtype: list
     :returns: Lines like the diff tool outputs.
     """
+    # Metadata-only revisions can have identical text. Avoid constructing a full
+    # diff just to discard all its unchanged lines below.
+    if isinstance(oldlines, list) and isinstance(newlines, list) and oldlines == newlines:
+        return []
+
     false = lambda s: None  # noqa
     if kw.get("ignorews", 0):
         d = difflib.Differ(false)
